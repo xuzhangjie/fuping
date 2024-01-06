@@ -1,27 +1,44 @@
 import importlib
 import os
+from tqdm import tqdm
 
 import pandas as pd
 
 from error import Error
 from model import Area, Family, Person
+import openpyxl
 
 records = set()
 
 
+def load_execl(path: str, header: int):
+    wb = openpyxl.load_workbook(path, read_only=True)
+    ws = wb.active
+    ws.reset_dimensions()
+    headers = []
+    for idx, row in enumerate(ws.rows):
+        if idx < header:
+            continue
+        if idx == header:
+            for j in row:
+                headers.append(j.value)
+        else:
+            yield {key: cell.value for (key, cell) in zip(headers, row)}
+
+
 def load_data(path):
-    objectInfo = pd.read_excel('./data/（自定义）监测对象信息 (22).xlsx', header=2).to_dict(orient='records')
-    huInfo = pd.read_excel('./data/（乡村建设）户信息_20231218.xlsx', header=2).to_dict(orient='records')
-    outInfo = pd.read_excel('./data/（务工月监测）已外出务工信息_20231218.xlsx', header=2).to_dict(orient='records')
-    previewInfo = pd.read_excel('./data/计划外出务工信息_20231218.xlsx', header=2).to_dict(orient='records')
-    countryInfo = pd.read_excel('./data/（自定义）行政村信息.xlsx', header=2).to_dict(orient='records')
+    objectInfo = load_execl('./data/（自定义）监测对象信息 (22).xlsx', header=2)
+    huInfo = load_execl('./data/（乡村建设）户信息_20231218.xlsx', header=2)
+    outInfo = load_execl('./data/（务工月监测）已外出务工信息_20231218.xlsx', header=2)
+    previewInfo = load_execl('./data/计划外出务工信息_20231218.xlsx', header=2)
+    countryInfo = load_execl('./data/（自定义）行政村信息.xlsx', header=2)
     return objectInfo, huInfo, outInfo, previewInfo, countryInfo
 
 
 def construct_model():
     objectInfo, huInfo, outInfo, previewInfo, countryInfo = load_data('')
     area = Area()
-    for row in objectInfo:
+    for row in tqdm(objectInfo, desc='构建监测对象表', unit='条'):
         huId = row.get('户编号')
         family: Family = area.get([row.get('县'), row.get('乡'), row.get('村'), row.get('户编号')])
         if family is None:
@@ -32,7 +49,7 @@ def construct_model():
         records.add(person)
         family.append(person)
 
-    for row in huInfo:
+    for row in tqdm(huInfo, desc='构建户信息表', unit='条'):
         person = Person(row.get('证件号码'), huInfo=row)
         family: Family = area.get([row.get('县(市、区、旗)'), row.get('乡(镇)'), row.get('行政村'), row.get('户编号')])
         if family is not None:
@@ -45,7 +62,7 @@ def construct_model():
             area.append([row.get('县(市、区、旗)'), row.get('乡(镇)'), row.get('行政村')], family)
         records.add(person)
 
-    for row in outInfo:
+    for row in tqdm(outInfo, desc='构建外出务工信息表', unit='条'):
         person = Person(row.get('证件号码'), outInfo=[row])
         family: Family = area.get([row.get('县'), row.get('乡'), row.get('行政村'), row.get('户编号')])
         if family is not None:
@@ -58,7 +75,7 @@ def construct_model():
             area.append([row.get('县'), row.get('乡'), row.get('行政村')], family)
         records.add(person)
 
-    for row in previewInfo:
+    for row in tqdm(previewInfo, desc='构建计划外出务工表', unit='条'):
         person = Person(row.get('证件号码'), previewInfo=[row])
         family: Family = area.get([row.get('县'), row.get('乡'), row.get('行政村'), row.get('户编号')])
         if family is not None:
