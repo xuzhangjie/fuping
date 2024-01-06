@@ -1,26 +1,40 @@
+from __future__ import annotations
+
 from typing import List, NewType, TypeVar, Dict, Optional, Generic
 from uuid import uuid4
 
 
+class DictRecord(dict):
+    __uid = uuid4()
+    
+    def __hash__(self):
+        return hash(self.__uid)
+
+
 class Person:
     idCard: str = None
-    objectInfo: Dict = None  # (基础信息) 监测对象信息
-    huInfo: Dict = None  # (乡村建设) 户信息
-    outInfo: List[Dict] = None  # (外出务工)
-    previewInfo: List[Dict] = None  # (计划外出务工)
+    objectInfo: DictRecord = None  # (基础信息) 监测对象信息
+    huInfo: DictRecord = None  # (乡村建设) 户信息
+    outInfo: List[DictRecord] = None  # (外出务工)
+    previewInfo: List[DictRecord] = None  # (计划外出务工)
+    countryInfo: DictRecord = None  # (行政村)
     family: 'Family' = None
-    uid = uuid4()
+    __uid = uuid4()
 
-    def __init__(self, idCard, objectInfo=None, huInfo=None, outInfo=None, previewInfo=None):
+    def __init__(self, idCard, objectInfo=None, huInfo=None, outInfo=None, previewInfo=None, countryInfo=None):
         self.idCard = idCard
         self.objectInfo = objectInfo
         self.huInfo = huInfo
         self.outInfo = outInfo
         self.previewInfo = previewInfo
+        self.countryInfo = countryInfo
 
     def merge(self, other: 'Person'):
         if self.objectInfo is None and other.objectInfo is not None:
             self.objectInfo = other.objectInfo
+
+        if self.countryInfo is None and other.countryInfo is not None:
+            self.countryInfo = other.countryInfo
 
         if self.huInfo is None and other.huInfo is not None:
             self.huInfo = other.huInfo
@@ -41,7 +55,7 @@ class Person:
         return False
 
     def __hash__(self):
-        return hash(self.uid)
+        return hash(self.__uid)
 
 
 class Family:
@@ -77,7 +91,7 @@ class Family:
 
 class Area:
     def __init__(self):
-        self.area: Dict[str, Dict[str, Dict[str, Dict[str, Family]]]] = dict()
+        self.area: DictRecord[str, DictRecord[str, DictRecord[str, DictRecord[str, Family]]]] = DictRecord()
 
     def append(self, area: List[str], family: Family):
         """
@@ -85,7 +99,7 @@ class Area:
         :param area: List[str]  #  县 / 乡 / 行政村
         :return:
         """
-        top: Dict = self.area
+        top: DictRecord = self.area
 
         for i in area:
             if i not in top:
@@ -93,8 +107,8 @@ class Area:
             top = top[i]
         top[family.id] = family
 
-    def get(self, area: List[str]) -> Dict | Family | None:
-        top: Dict | Family = self.area
+    def get(self, area: List[str]) -> DictRecord | Family | None:
+        top: DictRecord | Family = self.area
         for i in area:
             if i in top:
                 top = top[i]
