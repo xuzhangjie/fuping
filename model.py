@@ -60,6 +60,7 @@ class Person:
 
 class Family:
     member: List[Person] = None
+    host: Person = None
 
     def __init__(self, fid: str):
         self.id = fid
@@ -73,10 +74,13 @@ class Family:
                 break
         if last is not None:
             last.merge(person)
-            return last
+            ret = last
         else:
             self.member.append(person)
-            return person
+            ret = person
+        if ret.objectInfo is not None and ret.objectInfo.get("与户主关系") == '户主':
+            self.host = ret
+        return ret
 
     def pop(self, index):
         return self.member.pop(index)
