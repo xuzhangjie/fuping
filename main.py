@@ -128,7 +128,13 @@ def walk(root_path, exclude=None):
 
 def load_rules(path):
     rules = []
-    for filepath in walk(path):
+    ex = ['1_01_001.py', '1_01_002.py', '1_01_003.py', '1_01_004.py',
+          '1_02_001.py', '1_02_002.py', '1_02_003.py', '1_02_005.py', '1_02_007.py',
+          '1_11_001.py', '1_11_002.py', '1_11_009.py',
+          '1_12_001.py', '1_12_002.py', '1_12_003.py', '1_12_004.py'
+          '2_01_001.py', '2_01_002.py', '2_01_003.py', '2_01_003.py', '2_01_004.py', '2_01_006.py', '2_01_007.py', '2_01_008.py', '2_01_009.py', '2_01_011.py', '2_01_012.py',
+          '5_17_002.py', '5_12_014.py', '5_12_015.py', '5_12_016.py']
+    for filepath in walk(path, ex):
         if filepath.endswith('.py'):
             packages = filepath.split(os.path.sep)
             packages[-1] = packages[-1].rstrip('.py')
